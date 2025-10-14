@@ -14,6 +14,9 @@
 (blink-cursor-mode 0)                    ;; Disable blinking cursor
 (global-display-line-numbers-mode 1)
 
+(fringe-mode '(32 . 32))
+(setq flymake-fringe-indicator-position nil)
+
 (when (display-graphic-p)
   (context-menu-mode))                   ;; Right-click menu in GUI mode
 
@@ -89,13 +92,31 @@
 ;; ===========================================
 
 (setq major-mode-remap-alist
-      '((c-mode      . c-ts-mode)
-        (c++-mode    . c++-ts-mode)
-        (go-mode     . go-ts-mode)))
+     '((c-mode      . c-ts-mode)
+       (c++-mode    . c++-ts-mode)
+       (go-mode     . go-ts-mode)))
 
 ;; ===========================================
 ;; Eglot & Company (LSP and Completion)
 ;; ===========================================
+
+(advice-add 'eglot-hover-eldoc-function :override
+		(lambda (cb)
+		"A member of `eldoc-documentation-functions', for hover."
+		(when (eglot-server-capable :hoverProvider)
+		(let ((buf (current-buffer)))
+		(jsonrpc-async-request
+		(eglot--current-server-or-lose)
+		:textDocument/hover (eglot--TextDocumentPositionParams)
+		:success-fn (eglot--lambda ((Hover) contents range)
+				(eglot--when-buffer-window buf
+				(let ((info (unless (seq-empty-p contents)
+						(eglot--hover-info contents range))))
+					(funcall cb info
+						:echo info))))
+		:deferred :textDocument/hover))
+		(eglot--highlight-piggyback cb)
+		t)))
 
 (use-package company
   :ensure t
@@ -106,14 +127,13 @@
   (setq company-backends '((company-capf company-dabbrev-code company-dabbrev)))
   (setq company-format-margin-function #'company-text-icons-margin))
 
-
 (setq eglot-events-buffer-size 0)  ;; Disable events buffer
 (setq eglot-sync-connect nil)      ;; Don't block Emacs waiting for server
 (setq eglot-connect-timeout 10)    ;; Timeout after 10 seconds
-
+ 
 (with-eval-after-load 'eglot
     (fset #'jsonrpc--log-event #'ignore))
-
+ 
 (setq eglot-ignored-server-capabilities '(:documentOnTypeFormattingProvider))
 (defun my-eglot-format-buffer-on-save ()
   "Format buffer with eglot if managed."
@@ -185,6 +205,8 @@
 (evil-set-leader 'normal (kbd "SPC"))
 
 (evil-define-key 'normal 'global (kbd "<leader>q") 'quit-window)
+
+(evil-define-key 'normal 'global (kbd "`") 'find-file)
 
 (evil-define-key 'normal 'global (kbd "<leader>k") 'kill-current-buffer)
 (evil-define-key 'normal 'global (kbd "<leader>b") 'ibuffer)
