@@ -9,6 +9,8 @@
 (setq warning-suppress-log-types '((comp) (bytecomp)))     ;; Suppress native/byte compile logs
 (setq native-comp-async-report-warnings-errors 'silent)    ;; Quiet native compilation
 
+
+
 ;; Silence initial message in echo area
 (setq inhibit-startup-echo-area-message (user-login-name))
 

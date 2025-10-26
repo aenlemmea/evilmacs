@@ -14,6 +14,6 @@ My personal fully evil emacs config. Using Lucid GUI-Kit for GNU Emacs.
 
 1. Eglot (Built-in)
 2. Company (Built-in)
-3. Dired (Built-in)
+3. Tree-sitter (Built-in) [Disabled]
 4. Evil
 5. Evil-Collection

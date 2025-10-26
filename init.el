@@ -30,8 +30,8 @@
 ;; Tabs, Indents, and Offsets
 ;; ===========================================
 
-(setq c-ts-mode-indent-style 'k&r)  ;; Set style to K&R instead of GNU
-(setq c-ts-mode-indent-offset 2)    ;; Set the indent offset. Default (2)
+;; (setq c-ts-mode-indent-style 'k&r)  ;; Set style to K&R instead of GNU (Treesitter)
+;; (setq c-ts-mode-indent-offset 2)    ;; Set the indent offset. Default (2) (Treesitter)
 (setq-default tab-width 4)
 
 ;; ===========================================
@@ -42,6 +42,7 @@
 (setq backup-inhibited t)               ;; Extra safeguard
 (setq auto-save-default nil)            ;; No auto-save files
 (setq auto-save-list-file-prefix nil)   ;; No auto-save list files
+(setq auto-save-list-file-name nil)
 (setq create-lockfiles nil)             ;; No lockfiles
 
 (setq version-control nil)               ;; Don't keep numbered backups
@@ -91,10 +92,10 @@
 ;; Tree-sitter Mode Preferences
 ;; ===========================================
 
-(setq major-mode-remap-alist
-     '((c-mode      . c-ts-mode)
-       (c++-mode    . c++-ts-mode)
-       (go-mode     . go-ts-mode)))
+;; (setq major-mode-remap-alist
+;;      '((c-mode      . c-ts-mode)
+;;        (c++-mode    . c++-ts-mode)
+;;        (go-mode     . go-ts-mode)))
 
 ;; ===========================================
 ;; Eglot & Company (LSP and Completion)
@@ -140,35 +141,50 @@
   (when (eglot-managed-p)
     (eglot-format-buffer)))
 
-(add-hook 'c++-ts-mode-hook 
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'go-mode-hook 'eglot-ensure)
+
+(add-hook 'c++-mode-hook 
           (lambda () 
             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
-(add-hook 'c-ts-mode-hook 
+(add-hook 'c-mode-hook 
           (lambda () 
             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
-(add-hook 'go-ts-mode-hook 
+(add-hook 'go-mode-hook 
           (lambda () 
             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
 
-;; Eglot for C++ and Go
-(add-hook 'c++-ts-mode-hook 'eglot-ensure)
-(add-hook 'c-ts-mode-hook 'eglot-ensure)
-(add-hook 'go-ts-mode-hook 'eglot-ensure)
+;; ;; Eglot for C++ and Go Treesitter
+
+;; (add-hook 'c++-ts-mode-hook 
+;;           (lambda () 
+;;             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
+;; (add-hook 'c-ts-mode-hook 
+;;           (lambda () 
+;;             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
+;; (add-hook 'go-ts-mode-hook 
+;;           (lambda () 
+;;             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
+;; 
+;; (add-hook 'c++-ts-mode-hook 'eglot-ensure)
+;; (add-hook 'c-ts-mode-hook 'eglot-ensure)
+;; (add-hook 'go-ts-mode-hook 'eglot-ensure)
 
 ;; ===========================================
-;; File Associations
+;; File Associations for Treesitter
 ;; ===========================================
 
-;; Go files
-(add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
-
-;; C files
-(add-to-list 'auto-mode-alist '("\\.c\\'" . c-ts-mode))
-
-;; C++ files
-(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-ts-mode)) ;; Could also be C
-(dolist (pattern '("\\.cc\\'" "\\.cpp\\'" "\\.cxx\\'" "\\.hh\\'" "\\.hpp\\'" "\\.hxx\\'"))
-  (add-to-list 'auto-mode-alist (cons pattern 'c++-ts-mode)))
+;; ;; Go files
+;; (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
+;; 
+;; ;; C files
+;; (add-to-list 'auto-mode-alist '("\\.c\\'" . c-ts-mode))
+;; 
+;; ;; C++ files
+;; (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-ts-mode)) ;; Could also be C
+;; (dolist (pattern '("\\.cc\\'" "\\.cpp\\'" "\\.cxx\\'" "\\.hh\\'" "\\.hpp\\'" "\\.hxx\\'"))
+;;   (add-to-list 'auto-mode-alist (cons pattern 'c++-ts-mode)))
 
 ;; ===========================================
 ;; Evil Extras
