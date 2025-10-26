@@ -2,9 +2,7 @@
 
 ;; ===========================================
 ;; UI / Display Settings
-;; ===========================================
-(toggle-frame-maximized)
-
+;; =========================================== (toggle-frame-maximized)
 (setopt display-time-default-load-average nil)
 (setq inhibit-startup-message t)         ;; Disable splash screen
 (setq initial-scratch-message "")        ;; Disable scratch buffer message
@@ -60,6 +58,13 @@
 ;; ===========================================
 ;; General Behavior
 ;; ===========================================
+
+;; Prevent cc-mode from being loaded. Don't ask
+;; (with-eval-after-load 'cc-mode
+;;  (advice-add 'c-mode :override #'fundamental-mode)
+;;  (advice-add 'c++-mode :override #'fundamental-mode))
+
+(add-hook 'c-mode-common-hook (lambda () (abbrev-mode -1))) ;; Disable abbrev for CC-Mode
 
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
@@ -193,9 +198,20 @@
 (use-package evil-collection
   :after evil
   :ensure t
-  :custom (evil-collection-setup-minibuffer t)
+  :custom
+  (evil-collection-want-unimpaired-p nil)
+  (evil-collection-setup-minibuffer t)
   :config
   (evil-collection-init))
+
+
+;; ===========================================
+;; Go Mode 
+;; ===========================================
+
+(use-package go-mode
+  :ensure t
+  :mode "\\.go'")
 
 ;; ===========================================
 ;; Dired Customizations
@@ -267,7 +283,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages '(company evil-collection)))
+ '(package-selected-packages nil))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

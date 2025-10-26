@@ -17,3 +17,4 @@ My personal fully evil emacs config. Using Lucid GUI-Kit for GNU Emacs.
 3. Tree-sitter (Built-in) [Disabled]
 4. Evil
 5. Evil-Collection
+6. Go-Mode
