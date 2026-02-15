@@ -1,9 +1,6 @@
 ### Evilmacs
 
-My personal fully evil emacs config. Using Lucid GUI-Kit for GNU Emacs.
-
-> [!NOTE]  
-> Yes, I am aware that loading evil directly in `early-init.el` is a terrible terrible idea. However I need it. I hate when `init.el` breaks due to a change and I can no longer stay in evil mode. And yes, I am aware I can separate into a file and load it in init.el which does solve my issue but at the cost of a fragmented config file which I do not want.
+My personal emacs config. Using Lucid GUI-Kit for GNU Emacs.
 
 ### Core Goals
 
@@ -14,7 +11,5 @@ My personal fully evil emacs config. Using Lucid GUI-Kit for GNU Emacs.
 
 1. Eglot (Built-in)
 2. Company (Built-in)
-3. Tree-sitter (Built-in) [Disabled]
-4. Evil
-5. Evil-Collection
-6. Go-Mode
+3. Meow Mode
+4. Go-Mode

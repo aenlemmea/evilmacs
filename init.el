@@ -1,13 +1,15 @@
 ;;; init.el --- Main Emacs configuration -*- lexical-binding: t; -*-
 
 ;; ===========================================
-;; UI / Display Settings
-;; =========================================== (toggle-frame-maximized)
+;; UI Display Settings
+;; ===========================================
+(add-hook 'window-setup-hook #'toggle-frame-maximized)
 (setopt display-time-default-load-average nil)
-(setq inhibit-startup-message t)         ;; Disable splash screen
-(setq initial-scratch-message "")        ;; Disable scratch buffer message
-(setq initial-buffer-choice nil)         ;; Don't open any buffer at startup
-(setq display-line-numbers-type 'relative) ;; Relative line numbers
+
+(setq inhibit-startup-message t
+      initial-scratch-message ""
+      initial-buffer-choice nil
+      display-line-numbers-type 'relative)
 
 (blink-cursor-mode 0)                    ;; Disable blinking cursor
 (global-display-line-numbers-mode 1)
@@ -19,10 +21,25 @@
   (context-menu-mode))                   ;; Right-click menu in GUI mode
 
 ;; ===========================================
-;; Package Archives
+;; Package Setup
 ;; ===========================================
 
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(require 'package)
+
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/") t)
+
+;; Initialize package system (since you disabled it in early-init)
+(package-initialize)
+
+;; Bootstrap use-package if missing
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t)
+
 
 ;; ===========================================
 ;; Tabs, Indents, and Offsets
@@ -53,7 +70,7 @@
 ;; ===========================================
 
 (setq session-initialize nil)   ;; Disable session saving
-(desktop-save-mode -1)          ;; Disable desktop save mode (session saving)
+(desktop-save-mode 0)          ;; Disable desktop save mode (session saving)
 
 ;; ===========================================
 ;; General Behavior
@@ -73,6 +90,8 @@
 (setopt switch-to-buffer-obey-display-actions t)
 (setopt mouse-wheel-tilt-scroll t)
 (setopt mouse-wheel-flip-direction t)
+(fido-vertical-mode 1)
+(global-unset-key (kbd "C-M-i")) ;; Have to do this due to virtual machine!
 
 ;; ===========================================
 ;; Custom Save & Quit
@@ -105,24 +124,6 @@
 ;; ===========================================
 ;; Eglot & Company (LSP and Completion)
 ;; ===========================================
-
-(advice-add 'eglot-hover-eldoc-function :override
-		(lambda (cb)
-		"A member of `eldoc-documentation-functions', for hover."
-		(when (eglot-server-capable :hoverProvider)
-		(let ((buf (current-buffer)))
-		(jsonrpc-async-request
-		(eglot--current-server-or-lose)
-		:textDocument/hover (eglot--TextDocumentPositionParams)
-		:success-fn (eglot--lambda ((Hover) contents range)
-				(eglot--when-buffer-window buf
-				(let ((info (unless (seq-empty-p contents)
-						(eglot--hover-info contents range))))
-					(funcall cb info
-						:echo info))))
-		:deferred :textDocument/hover))
-		(eglot--highlight-piggyback cb)
-		t)))
 
 (use-package company
   :ensure t
@@ -192,26 +193,12 @@
 ;;   (add-to-list 'auto-mode-alist (cons pattern 'c++-ts-mode)))
 
 ;; ===========================================
-;; Evil Extras
-;; ===========================================
-
-(use-package evil-collection
-  :after evil
-  :ensure t
-  :custom
-  (evil-collection-want-unimpaired-p nil)
-  (evil-collection-setup-minibuffer t)
-  :config
-  (evil-collection-init))
-
-
-;; ===========================================
 ;; Go Mode 
 ;; ===========================================
 
 (use-package go-mode
   :ensure t
-  :mode "\\.go'")
+  :mode "\\.go\\'")
 
 ;; ===========================================
 ;; Dired Customizations
@@ -221,73 +208,132 @@
 (setq dired-dwim-target t) 
 (setq dired-kill-when-opening-new-dired-buffer t)
 
+;; ===========================================
+;; Dired Clean Navigation Setup
+;; ===========================================
+
+;;; --- File Navigation Setup ---
+
+(with-eval-after-load 'meow
+  (define-key meow-normal-state-keymap (kbd "@") #'dired-jump)
+  (define-key meow-normal-state-keymap (kbd "_") #'dired))
+
+;; Create file or directory from Dired using +
+(defun my-dired-create-file-or-dir (name)
+  "Create a file or directory.
+If NAME ends with '/', create a directory.
+Otherwise create an empty file."
+  (interactive "FCreate file or directory: ")
+  (if (string-suffix-p "/" name)
+      (progn
+        (make-directory name t)
+        (revert-buffer))
+    (progn
+      (write-region "" nil name)
+      (revert-buffer))))
+
 (with-eval-after-load 'dired
-  (evil-define-key 'normal dired-mode-map
-    (kbd "*") 'dired-create-empty-file))
+  (define-key dired-mode-map (kbd "+") 'my-dired-create-file-or-dir))
 
-(define-key evil-normal-state-map (kbd "-") #'dired-jump)  ;; Dired for current
-(define-key evil-normal-state-map (kbd "_") #'dired)       ;; Prompt for dir
-  
 ;; ===========================================
-;; Remaps
+;; Meow Mode
 ;; ===========================================
 
-(evil-ex-define-cmd "q"  'save-and-quit-safe)
-(evil-ex-define-cmd "q!" 'save-and-quit-safe)
-(evil-set-leader 'normal (kbd "SPC"))
+(defun meow-setup ()
+  (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
+  (meow-motion-define-key
+   '("j" . meow-next)
+   '("k" . meow-prev)
+   '("<escape>" . ignore))
+  (meow-leader-define-key
+   ;; Use SPC (0-9) for digit arguments.
+   '("1" . meow-digit-argument)
+   '("2" . meow-digit-argument)
+   '("3" . meow-digit-argument)
+   '("4" . meow-digit-argument)
+   '("5" . meow-digit-argument)
+   '("6" . meow-digit-argument)
+   '("7" . meow-digit-argument)
+   '("8" . meow-digit-argument)
+   '("9" . meow-digit-argument)
+   '("0" . meow-digit-argument)
+   '("/" . meow-keypad-describe-key)
+   '("?" . meow-cheatsheet))
+  (meow-normal-define-key
+   '("0" . meow-expand-0)
+   '("9" . meow-expand-9)
+   '("8" . meow-expand-8)
+   '("7" . meow-expand-7)
+   '("6" . meow-expand-6)
+   '("5" . meow-expand-5)
+   '("4" . meow-expand-4)
+   '("3" . meow-expand-3)
+   '("2" . meow-expand-2)
+   '("1" . meow-expand-1)
+   '("-" . negative-argument)
+   '(";" . meow-reverse)
+   '("," . meow-inner-of-thing)
+   '("." . meow-bounds-of-thing)
+   '("[" . meow-beginning-of-thing)
+   '("]" . meow-end-of-thing)
+   '("a" . meow-append)
+   '("A" . meow-open-below)
+   '("b" . meow-back-word)
+   '("B" . meow-back-symbol)
+   '("c" . meow-change)
+   '("d" . meow-delete)
+   '("D" . meow-backward-delete)
+   '("e" . meow-next-word)
+   '("E" . meow-next-symbol)
+   '("f" . meow-find)
+   '("g" . meow-cancel-selection)
+   '("G" . meow-grab)
+   '("h" . meow-left)
+   '("H" . meow-left-expand)
+   '("i" . meow-insert)
+   '("I" . meow-open-above)
+   '("j" . meow-next)
+   '("J" . meow-next-expand)
+   '("k" . meow-prev)
+   '("K" . meow-prev-expand)
+   '("l" . meow-right)
+   '("L" . meow-right-expand)
+   '("m" . meow-join)
+   '("n" . meow-search)
+   '("o" . meow-block)
+   '("O" . meow-to-block)
+   '("p" . meow-yank)
+   '("q" . meow-quit)
+   '("Q" . meow-goto-line)
+   '("r" . meow-replace)
+   '("R" . meow-swap-grab)
+   '("s" . meow-kill)
+   '("t" . meow-till)
+   '("u" . meow-undo)
+   '("U" . meow-undo-in-selection)
+   '("v" . meow-visit)
+   '("w" . meow-mark-word)
+   '("W" . meow-mark-symbol)
+   '("x" . meow-line)
+   '("X" . meow-goto-line)
+   '("y" . meow-save)
+   '("Y" . meow-sync-grab)
+   '("z" . meow-pop-selection)
+   '("'" . repeat)
+   '("<escape>" . ignore)))
 
-(evil-define-key 'normal 'global (kbd "<leader>q") 'quit-window)
-
-(evil-define-key 'normal 'global (kbd "`") 'find-file)
-
-(evil-define-key 'normal 'global (kbd "<leader>k") 'kill-current-buffer)
-(evil-define-key 'normal 'global (kbd "<leader>b") 'ibuffer)
-(evil-define-key 'normal 'global (kbd "<leader>p") 'previous-buffer)
-(evil-define-key 'normal 'global (kbd "<leader>n") 'next-buffer)
-(evil-define-key 'normal 'global (kbd "<leader>f") 'switch-to-buffer)
-
-;; Navigation
-(evil-define-key 'normal 'global (kbd "<leader>wh") 'evil-window-left)
-(evil-define-key 'normal 'global (kbd "<leader>wj") 'evil-window-down)
-(evil-define-key 'normal 'global (kbd "<leader>wk") 'evil-window-up)
-(evil-define-key 'normal 'global (kbd "<leader>wl") 'evil-window-right)
-(evil-define-key 'normal 'global (kbd "<leader>ww") 'evil-window-next)
-
-;; Movement/Swapping (Emacs 27+)
-(evil-define-key 'normal 'global (kbd "<leader>wH") 'windmove-swap-states-left)
-(evil-define-key 'normal 'global (kbd "<leader>wJ") 'windmove-swap-states-down)
-(evil-define-key 'normal 'global (kbd "<leader>wK") 'windmove-swap-states-up)
-(evil-define-key 'normal 'global (kbd "<leader>wL") 'windmove-swap-states-right)
-
-;; Resizing
-(evil-define-key 'normal 'global (kbd "<leader>w<") 'evil-window-decrease-width)
-(evil-define-key 'normal 'global (kbd "<leader>w>") 'evil-window-increase-width)
-(evil-define-key 'normal 'global (kbd "<leader>w-") 'evil-window-decrease-height)
-(evil-define-key 'normal 'global (kbd "<leader>w+") 'evil-window-increase-height)
-(evil-define-key 'normal 'global (kbd "<leader>w=") 'balance-windows)
-
-;; Splits
-(evil-define-key 'normal 'global (kbd "<leader>ws") 'evil-window-split)
-(evil-define-key 'normal 'global (kbd "<leader>wv") 'evil-window-vsplit)
-
-;; Close
-(evil-define-key 'normal 'global (kbd "<leader>wq") 'evil-window-delete)
-(evil-define-key 'normal 'global (kbd "<leader>wo") 'delete-other-windows)
-
+(use-package meow
+  :custom
+  (meow-use-clipboard t)
+  :config
+  (meow-setup)
+  (meow-global-mode 1))
+	
 ;; ===========================================
 ;; Custom Variables (Generated)
 ;; ===========================================
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+;; ===========================================
+;; Custom Escape Panic Button
+;; ===========================================
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

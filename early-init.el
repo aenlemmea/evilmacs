@@ -1,57 +1,37 @@
-;;; early-init.el --- Emacs early init config -*- lexical-binding: t; -*-
+;;; early-init.el --- Early Init -*- lexical-binding: t; -*-
 
 ;; ===========================================
-;; GC and Warning Optimizations
+;; Speed Up Startup
 ;; ===========================================
 
-(setq gc-cons-threshold 10000000)                          ;; Speed up startup
-(setq byte-compile-warnings '(not obsolete))               ;; Suppress obsolete warnings
-(setq warning-suppress-log-types '((comp) (bytecomp)))     ;; Suppress native/byte compile logs
-(setq native-comp-async-report-warnings-errors 'silent)    ;; Quiet native compilation
+(setq site-run-file nil)
 
+;; Increase GC threshold during startup
+(setq gc-cons-threshold (* 50 1000 1000))
+(setq gc-cons-percentage 0.6)
 
+;; Disable package auto-initialization
+(setq package-enable-at-startup nil)
 
-;; Silence initial message in echo area
-(setq inhibit-startup-echo-area-message (user-login-name))
+;; Suppress compilation noise
+(setq byte-compile-warnings '(not obsolete))
+(setq warning-suppress-log-types '((comp) (bytecomp)))
+(setq native-comp-async-report-warnings-errors 'silent)
+
+;; Silence echo area message
+(setq inhibit-startup-echo-area-message user-login-name)
 
 ;; ===========================================
-;; Appearance Settings (GUI)
+;; UI Tweaks (before frame creation)
 ;; ===========================================
-
-(when initial-window-system
-  (setq frame-background-mode 'dark)
-  (add-to-list 'default-frame-alist '(background-color . "black"))
-  (add-to-list 'default-frame-alist '(foreground-color . "white")))
 
 (menu-bar-mode -1)
-(when (tool-bar-mode)    (tool-bar-mode -1))
-(when (scroll-bar-mode)  (scroll-bar-mode -1))
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 
-;; ===========================================
-;; Evil Setup (with bootstrap if missing)
-;; ===========================================
+(setq frame-inhibit-implied-resize t)
 
-(setq package-enable-at-startup nil)
-(package-initialize) 
-(require 'use-package)
-
-(unless (package-installed-p 'evil)
-  (package-refresh-contents)
-  (package-install 'evil))
-
-(use-package evil
-  :demand t
-  :bind (("<escape>" . keyboard-escape-quit))
-  :init
-  (setq evil-want-keybinding nil)
-  (setq evil-want-integration t)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-Y-yank-to-eol t)          ;; Make Y behave like D and C
-  (setq evil-want-fine-undo t)              ;; More granular undo in insert mode
-  (setq evil-undo-system 'undo-redo)        ;; Use modern undo system
-  (setq evil-split-window-below t)          ;; New splits go below
-  (setq evil-vsplit-window-right t)         ;; New vsplits go right
-  :config
-  (evil-mode 1))
-
-
+;; Default dark frame
+(add-to-list 'default-frame-alist '(background-color . "black"))
+(add-to-list 'default-frame-alist '(foreground-color . "white"))
+(setq frame-background-mode 'dark)
