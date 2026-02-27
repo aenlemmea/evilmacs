@@ -11,5 +11,4 @@ My personal emacs config. Using Lucid GUI-Kit for GNU Emacs.
 
 1. Eglot (Built-in)
 2. Company (Built-in)
-3. Meow Mode
 4. Go-Mode

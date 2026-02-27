@@ -32,6 +32,6 @@
 (setq frame-inhibit-implied-resize t)
 
 ;; Default dark frame
-(add-to-list 'default-frame-alist '(background-color . "black"))
-(add-to-list 'default-frame-alist '(foreground-color . "white"))
-(setq frame-background-mode 'dark)
+;; (add-to-list 'default-frame-alist '(background-color . "black"))
+;; (add-to-list 'default-frame-alist '(foreground-color . "white"))
+;; (setq frame-background-mode 'dark)
