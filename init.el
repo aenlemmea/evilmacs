@@ -75,6 +75,11 @@
 
 (add-hook 'c-mode-common-hook (lambda () (abbrev-mode -1))) ;; Disable abbrev for CC-Mode
 
+(add-hook 'c++-mode-hook
+          (lambda ()
+            (setq-local font-lock-maximum-decoration 1)
+            (setq-local show-trailing-whitespace nil)))
+
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
 
@@ -146,6 +151,20 @@
           (lambda () 
             (add-hook 'before-save-hook #'my-eglot-format-buffer-on-save nil t)))
 
+(defun eldoc-in-completions ()
+  (add-hook
+   'eldoc-documentation-functions
+   (lambda (cb)
+     (let* ((documentation (plist-get
+                            (get-text-property (point) 'eglot--lsp-item)
+                            :documentation))
+            (formatted (and documentation
+                            (eglot--format-markup documentation))))
+       (when formatted (funcall cb formatted :echo 'skip))))
+   nil t)
+  (eldoc-mode t))
+
+(add-hook 'completion-list-mode-hook #'eldoc-in-completions)
 ;; ===========================================
 ;; Go Mode 
 ;; ===========================================
